@@ -1,0 +1,6 @@
+main: me.ferrybig.bukkit.plugins.minecartsplash.MinecartSplash
+name: MinecartSplash
+version: 1.0.0
+author: ferrybig
+load: POSTWORLD
+database: false
