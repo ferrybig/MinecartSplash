@@ -4,12 +4,15 @@ import java.util.Random;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.Minecart;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.vehicle.VehicleMoveEvent;
+import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.Vector;
 
@@ -19,6 +22,8 @@ public class MinecartSplash extends JavaPlugin implements Listener {
     private final static Material[] liquidBlocks = new Material[]{
         Material.WATER, Material.STATIONARY_WATER,
         Material.LAVA, Material.STATIONARY_LAVA,};
+    private final static String UNIQUE_METADATA
+            = MinecartSplash.class.getName() + "AlwaysBreak";
 
     private boolean isLiquid(Block bl) {
         for (Material m : liquidBlocks) {
@@ -34,7 +39,7 @@ public class MinecartSplash extends JavaPlugin implements Listener {
         this.getServer().getPluginManager().registerEvents(this, this);
     }
 
-    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onMinecartMove(VehicleMoveEvent event) {
         if (event.getVehicle() instanceof Minecart) {
             Minecart minecart = (Minecart) event.getVehicle();
@@ -45,22 +50,36 @@ public class MinecartSplash extends JavaPlugin implements Listener {
             }
             Block currentBlock = loc.getBlock();
             Block lastBlock = loc.toVector().
-                    subtract(speed.clone().normalize().multiply(2)).
+                    subtract(speed.clone().multiply(4)).
                     toLocation(loc.getWorld()).getBlock();
             if (isLiquid(currentBlock) && !isLiquid(lastBlock)) {
                 speed.setY(-speed.getY());
+                loc.add(speed.clone().normalize());
                 for (int i = 0; i < 5; i++) {
                     FallingBlock fb = minecart.getWorld().
-                            spawnFallingBlock(loc, currentBlock.getType(), (byte) 0);
+                            spawnFallingBlock(loc, currentBlock.getType(),
+                                    (byte) 0);
                     Vector r = speed.clone();
+                    r.multiply(1f / Math.sqrt(r.length()));
                     r.add(new Vector(
-                            MinecartSplash.random.nextGaussian(),
-                            MinecartSplash.random.nextGaussian(),
-                            MinecartSplash.random.nextGaussian())
-                    .multiply(0.2));
+                            MinecartSplash.random.nextDouble() -.5,
+                            MinecartSplash.random.nextDouble() -.5,
+                            MinecartSplash.random.nextDouble() -.5)
+                            .multiply(0.5 * 0.9));
                     fb.setVelocity(r);
+                    fb.setDropItem(false);
+                    fb.setMetadata(UNIQUE_METADATA,
+                            new FixedMetadataValue(this, loc));
                 }
             }
         }
+    }
+
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
+    public void onBlockPlace(EntityChangeBlockEvent event) {
+        if (!event.getEntity().hasMetadata(UNIQUE_METADATA)) {
+            return;
+        }
+        event.setCancelled(true);
     }
 }
