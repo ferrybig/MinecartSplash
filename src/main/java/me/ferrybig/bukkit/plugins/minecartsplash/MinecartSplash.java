@@ -60,6 +60,12 @@ public class MinecartSplash extends JavaPlugin implements Listener {
                             spawnFallingBlock(loc, currentBlock.getType(),
                                     (byte) 0);
                     Vector r = speed.clone();
+                    double s;
+                    if((s = r.lengthSquared()) > 5 * 5) {
+                        s = Math.sqrt(s);
+                        r.divide(new Vector(s,s,s));
+                        r.multiply(5);
+                    }
                     r.multiply(1f / Math.sqrt(r.length()));
                     r.add(new Vector(
                             MinecartSplash.random.nextDouble() -.5,
